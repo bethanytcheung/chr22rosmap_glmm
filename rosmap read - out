@@ -1,0 +1,77 @@
+import rpy2.robjects as ro
+from rpy2.robjects import r
+import os
+import pandas as pd
+
+
+# R code embedded in Python
+r_script = """
+library(SeqArray)
+
+# Access specific elements from the SeqVarDataList
+seq_data <- seqGetData(gds, "annotation/info/apc_epigenetics_active")
+
+# Convert the SeqVarDataList to a simple R object
+flattened_data <- lapply(seq_data, as.vector)  # Converts each element to a simple vector
+flattened_df <- do.call(data.frame, flattened_data)  # Combine vectors into a data frame
+
+print(flattened_df)
+
+
+gds <- seqOpen("/Users/bethanytcheung/Downloads/r4_wgs_FAVOR_annotation_chr22.gds")
+seqSummary(gds)
+
+active_e <- seqGetData(gds, "annotation/info/apc_epigenetics_active")
+repressed_e <- seqGetData(gds, "annotation/info/apc_epigenetics_repressed")
+transcription <- seqGetData(gds, "annotation/info/apc_epigenetics_transcription")
+enhancers <- seqGetData(gds, "annotation/info/super_enhancer")
+methylation <- seqGetData(gds, "annotation/info/encode_dnase_sum")
+
+data <- data.frame(
+    active_e = seqGetData(gds, "annotation/info/apc_epigenetics_active"),
+    repressed_e = seqGetData(gds, "annotation/info/apc_epigenetics_repressed"),
+    transcription = seqGetData(gds, "annotation/info/apc_epigenetics_transcription"),
+    enhancer = seqGetData(gds, "annotation/info/super_enhancer"),
+    methylation = seqGetData(gds, "annotation/info/encode_dnase_sum")
+)
+
+# Convert the data properly
+active_e <- as.vector(seqGetData(gds, "annotation/info/apc_epigenetics_active"))
+repressed_e <- as.vector(seqGetData(gds, "annotation/info/apc_epigenetics_repressed"))
+transcription <- as.vector(seqGetData(gds, "annotation/info/apc_transcription"))
+enhancers <- as.vector(seqGetData(gds, "annotation/info/super_enhancer"))
+methylation <- as.vector(seqGetData(gds, "annotation/info/encodeDnaMethylSum"))
+
+# Create the data frame after ensuring they're converted
+data <- data.frame(
+  Active_e = active_e,
+  Repressed_e = repressed_e,
+  Transcription = transcription,
+  Enhancer = enhancers,
+  Methylation = methylation
+)
+
+# Create a data frame
+data <- data.frame(Active_e = active_e, Repressed_e = repressed_e, Transcription = transcription, Enhancer = enhancer, Methylation = methylation)
+
+# Write to a .txt file
+write.table(data, file = "/Users/bethanytcheung/Downloads/r4_wgs_FAVOR_annotation_chr22.txt", sep = "\t", row.names = FALSE, col.names = TRUE)
+
+seqClose(gds)
+"""
+
+try:
+    result = ro.r(r_script)
+    print(result)  # Prints the data frame in Python
+except Exception as e:
+    print(f"Error: {e}")
+
+file_path = "/Users/bethanytcheung/Downloads/r4_wgs_FAVOR_annotation_chr22.txt"
+print("File exists:", os.path.exists(file_path))
+
+chunk_size = 100000
+chunks = pd.read_csv(file_path, sep="\t", chunksize=chunk_size)
+
+for i, chunk in enumerate(chunks):
+    print(f"Processing chunk {i + 1}")
+    print(chunk.head())  

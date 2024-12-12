@@ -1,0 +1,34 @@
+# notes for glmm format
+from statsmodels.formula.api import glm
+ model = glm(formula, data, family)
+    formual: response ~ explanatory variable(s) - 'y ~ x1 + x2'
+             output ~ input(s)
+                        - Categorical models = C(x1)
+                        - removing intercept = -1
+                        - interaction between x1, x2 = x1:x2
+                        - interaction between x1, x2, individual variables of ea. = x1*x2
+                        - vectorized(?) functions to model variables = np.log(x1)
+
+Family arguments:
+- Gaussian = (link = sm.families.links.identity) --> default (other nondefault must be specified)
+- Binominal = (link = sm.families.links.logit)
+        + probit, cauchy, log, cloglog
+- Poisson = (link = sm.families.links.log)
+        + identity, sqrt
+
+To only view regression coefficents (i think this is the table thing)
+    model_GLM.params
+            - .params prints regression coefficents
+    model_GLM.conf_int()
+            - conf_int(alpha = 0.05, cols = None) prints confidence intervals estimates
+                    - default = 95%, can be changed w/ alpha function, cols = which confidence interval u want
+
+To make predictions
+- provide model variables and provide test data, or else it will make predictions w/ fit data and that shows nothing
+    model_GLM.predict(test_data)
+            - .predict(test_data) computes predictions
+
+*****
+Cmd + shift + P to change languages !!
+
+# notes end

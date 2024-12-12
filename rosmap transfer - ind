@@ -1,0 +1,15 @@
+import pandas as pd
+
+input_file = "/Users/bethanytcheung/Desktop/adsp.wgs.r4.Asian.chr22.2777.2024.11.03.ld.output.txt"
+output_file = "/Users/bethanytcheung/glmmwork/rosmap data"
+chunk_size = 100000
+
+with open(output_file, "w") as dest:
+    for i, chunk in enumerate(pd.read_csv(input_file, sep="\t", chunksize=chunk_size)):
+        if i == 0:
+            chunk.to_csv(dest, sep="\t", index=False)
+        else:
+            chunk.to_csv(dest, sep="\t", index=False, header=False)
+
+print(f"Large file copied to {output_file} in chunks.")
+

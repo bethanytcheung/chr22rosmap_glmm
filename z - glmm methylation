@@ -1,0 +1,101 @@
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
+
+file_path_ind = "/Users/bethanytcheung/glmmwork/glmm/rosmap data - ind"
+file_path_out = "/Users/bethanytcheung/glmmwork/glmm/@combined_output.txt"
+# Independent variable data
+data_ind = pd.read_csv(file_path_ind, sep='\t', dtype=str, low_memory=False)
+print(data_ind.columns.tolist())
+
+# Extract independent variables
+dprime = data_ind['dprime'] 
+d = data_ind['d']
+r = data_ind['r']
+rsq = data_ind['rsq']
+pos1 = data_ind['pos1']
+
+data_out = pd.read_csv(file_path_out, sep='\t', dtype=str, low_memory=False)
+print(data_out.columns.tolist())
+# Extract the next 5 columns (assumed to be dependent variables)
+# Columns 0-4
+
+active = data_out['r4_wgs_FAVOR_annotation_chr22_methylation'] # Align index if needed
+
+# Repeat or align the group column to match rows
+# Assuming len(independent_data) == len(dependent_data)
+data_out['pos1'] = data_ind['pos1']
+chunk_size = 10_000  # Adjust based on your memory capacity
+combined_data = []
+
+for chunk_ind in pd.read_csv(file_path_ind, sep='\t', dtype=str, chunksize=chunk_size):
+    chunk_out = pd.read_csv(file_path_out, sep='\t', dtype=str, nrows=chunk_size)
+    
+    # Merge and process the chunk
+    chunk_out['pos1'] = chunk_ind['pos1']
+    chunk = pd.merge(chunk_ind, chunk_out, on='pos1')
+    chunk = chunk.dropna(subset=['r4_wgs_FAVOR_annotation_chr22_methylation', 'd', 'dprime', 'r', 'rsq', 'pos1'])
+    
+    # Convert necessary columns to numeric
+    for col in ['r4_wgs_FAVOR_annotation_chr22_methylation', 'd', 'dprime', 'r', 'rsq']:
+        chunk[col] = pd.to_numeric(chunk[col], downcast='float', errors='coerce')
+    chunk = chunk.dropna()
+    
+    combined_data.append(chunk)
+
+# Concatenate all processed chunks
+combined_data = pd.concat(combined_data, ignore_index=True)
+print(f"Final combined data shape: {combined_data.shape}")
+
+model = smf.mixedlm("r4_wgs_FAVOR_annotation_chr22_methylation ~ d + dprime + r + rsq", combined_data, groups=combined_data["pos1"])
+result = model.fit()
+
+print(result.summary())
+
+
+import seaborn as sns
+
+# Apply Seaborn style
+sns.set_theme(style="whitegrid")
+methylation_coef = result.params 
+conf_int = result.conf_int()
+
+print("Coef values:", methylation_coef)
+print("Conf_int:\n", conf_int)
+# Sort coefficients by magnitude for better visualization
+coef_sorted = methylation_coef.sort_values(ascending=False)
+conf_int_sorted = conf_int.loc[coef_sorted.index]
+yerr_sorted = np.array([coef_sorted.values - conf_int_sorted.iloc[:, 0],
+                        conf_int_sorted.iloc[:, 1] - coef_sorted.values])
+
+# Define color palette based on significance
+significant = result.pvalues[coef_sorted.index] < 0.05
+colors = ['red' if sig else 'skyblue' for sig in significant]
+
+# Plotting
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.barplot(x=coef_sorted.index, y=coef_sorted.values, ax=ax, palette=colors, alpha=0.8)
+
+# Add error bars
+x_positions = range(len(coef_sorted))
+ax.errorbar(x=x_positions, y=coef_sorted.values, yerr=yerr_sorted,
+            fmt='none', capsize=5, color='black', elinewidth=1.5)
+
+# Enhance plot aesthetics
+ax.set_xlabel('Epigenetic Markers', fontsize=12)
+ax.set_ylabel('Effect Size (Coefficient)', fontsize=12)
+ax.set_title('GLMM Results: Methylation Effects', fontsize=14, weight='bold')
+plt.xticks(rotation=45, fontsize=10)
+ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.7)
+
+# Annotate bars with coefficient values
+for i, value in enumerate(coef_sorted.values):
+    ax.text(i, value + 0.02 if value > 0 else value - 0.02,
+            f"{value:.2f}", ha="center", va="bottom" if value > 0 else "top",
+            fontsize=10, color="black")
+
+# Tight layout
+plt.tight_layout()
+plt.show()
