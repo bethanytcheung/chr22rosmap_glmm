@@ -1,0 +1,50 @@
+import os
+import rpy2.robjects as ro
+import pandas as pd
+
+# Define R script - REPRESSED
+r_script = """
+library(SeqArray)
+
+gds_file <- "/Users/bethanytcheung/glmmwork/out/r4_wgs_FAVOR_annotation_chr22.gds"
+if (!file.exists(gds_file)) {
+    stop("GDS file not found at: ", gds_file)
+}
+
+gds <- seqOpen(gds_file)
+print("File opened successfully!")
+
+# Extract data (example)
+repressed_e <- as.vector(seqGetData(gds, "annotation/info/apc_epigenetics_repressed"))
+
+# Combine into data frame
+data_frame <- data.frame(repressed = repressed_e)
+
+# Write output
+output_file_repressed <- "/Users/bethanytcheung/glmmwork/out/r4_wgs_FAVOR_annotation_chr22_repressed.txt"
+write.table(data_frame, file = output_file_repressed, sep = "\t", row.names = FALSE, quote = FALSE)
+print("File written successfully!")
+"""
+
+try:
+    ro.r(r_script)
+except Exception as e:
+    print(f"Error during R execution: {e}")
+
+# Verify file exists
+output_path_repressed = "/Users/bethanytcheung/glmmwork/out/r4_wgs_FAVOR_annotation_chr22_repressed.txt"
+if os.path.exists(output_path_repressed):
+    print(f"Output file exists: {output_path_repressed}")
+else:
+    print("Output file not found.")
+
+
+# Read and process the file using pandas
+if os.path.exists(output_path_repressed):
+    chunk_size = 100000
+    chunks = pd.read_csv(output_path_repressed, sep="\t", chunksize=chunk_size)
+    for i, chunk in enumerate(chunks):
+        print(f"Processing chunk {i + 1}")
+        print(chunk.head())
+else:
+    print(f"Output file not found: {output_path_repressed}")
