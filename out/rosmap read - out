@@ -4,7 +4,6 @@ import os
 import pandas as pd
 
 
-# R code embedded in Python
 r_script = """
 library(SeqArray)
 
@@ -62,7 +61,7 @@ seqClose(gds)
 
 try:
     result = ro.r(r_script)
-    print(result)  # Prints the data frame in Python
+    print(result)  
 except Exception as e:
     print(f"Error: {e}")
 

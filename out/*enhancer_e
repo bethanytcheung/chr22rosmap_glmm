@@ -2,7 +2,6 @@ import os
 import rpy2.robjects as ro
 import pandas as pd
 
-# Define R script - ENHANCER
 r_script = """
 library(SeqArray)
 
@@ -33,14 +32,12 @@ try:
 except Exception as e:
     print(f"Error during R execution: {e}")
 
-# Verify file exists
 output_path_enhancer = "/Users/bethanytcheung/glmmwork/out/r4_wgs_FAVOR_annotation_chr22_enhancer.txt"
 if os.path.exists(output_path_enhancer):
     print(f"Output file exists: {output_path_enhancer}")
 else:
     print("Output file not found.")
 
-# Read and process the file using pandas
 if os.path.exists(output_path_enhancer):
     chunk_size = 100000
     chunks = pd.read_csv(output_path_enhancer, sep="\t", chunksize=chunk_size)

@@ -2,7 +2,6 @@ import os
 import rpy2.robjects as ro
 import pandas as pd
 
-# Define R script - ACTIVE
 r_script = """
 library(SeqArray)
 
@@ -31,15 +30,12 @@ try:
 except Exception as e:
     print(f"Error during R execution: {e}")
 
-# Verify file exists
 output_path_active = "/Users/bethanytcheung/glmmwork/out/r4_wgs_FAVOR_annotation_chr22_active.txt"
 if os.path.exists(output_path_active):
     print(f"Output file exists: {output_path_active}")
 else:
     print("Output file not found.")
 
-
-# Read and process the file using pandas
 if os.path.exists(output_path_active):
     chunk_size = 100000
     chunks = pd.read_csv(output_path_active, sep="\t", chunksize=chunk_size)
@@ -48,9 +44,3 @@ if os.path.exists(output_path_active):
         print(chunk.head())
 else:
     print(f"Output file not found: {output_path_active}")
-
-
-
-
-
-

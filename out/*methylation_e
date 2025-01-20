@@ -2,7 +2,6 @@ import os
 import rpy2.robjects as ro
 import pandas as pd
 
-# Define R script - METHYLATION
 r_script = """
 library(SeqArray)
 
@@ -31,15 +30,12 @@ try:
 except Exception as e:
     print(f"Error during R execution: {e}")
 
-# Verify file exists
 output_path_methylation = "/Users/bethanytcheung/glmmwork/out/r4_wgs_FAVOR_annotation_chr22_methylation.txt"
 if os.path.exists(output_path_methylation):
     print(f"Output file exists: {output_path_methylation}")
 else:
     print("Output file not found.")
 
-
-# Read and process the file using pandas
 if os.path.exists(output_path_methylation):
     chunk_size = 100000
     chunks = pd.read_csv(output_path_methylation, sep="\t", chunksize=chunk_size)
